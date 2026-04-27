@@ -1,344 +1,255 @@
-/*******************************************************************************************
-*
-*   raylib [core] example - keyboard testbed
-*
-*   Example complexity rating: [★★☆☆] 2/4
-*
-*   NOTE: raylib defined keys refer to ENG-US Keyboard layout,
-*   mapping to other layouts is up to the user
-*
-*   Example originally created with raylib 5.6, last time updated with raylib 5.6
-*
-*   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
-*   BSD-like license that allows static linking with closed source software
-*
-*   Copyright (c) 2026 Ramon Santamaria (@raysan5)
-*
-********************************************************************************************/
-
-#include "raylib.h"
-
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
+#include "renderers/raylib/clay_renderer_raylib.c"
 
-#define  KEY_REC_SPACING      4       // Space in pixels between key rectangles
+const uint32_t FONT_ID_BODY_24 = 0;
+const uint32_t FONT_ID_BODY_16 = 1;
+#define COLOR_ORANGE (Clay_Color) {225, 138, 50, 255}
+#define COLOR_BLUE (Clay_Color) {111, 173, 162, 255}
 
-//------------------------------------------------------------------------------------
-// Module Functions Declaration
-//------------------------------------------------------------------------------------
-static const char *GetKeyText(int key);
-static void GuiKeyboardKey(Rectangle bounds, int key);
+Texture2D profilePicture;
+#define RAYLIB_VECTOR2_TO_CLAY_VECTOR2(vector) (Clay_Vector2) { .x = vector.x, .y = vector.y }
 
-void update_keyboard(void) {
-    int key = GetKeyPressed(); // Get pressed keycode
-    if (key > 0) TraceLog(LOG_INFO, "KEYBOARD TESTBED: KEY PRESSED:    %d", key);
+Clay_String profileText = CLAY_STRING_CONST("Profile Page one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen");
+Clay_TextElementConfig headerTextConfig = { .fontId = 1, .letterSpacing = 10, .fontSize = 12, .textColor = {0,0,0,255} };
 
-    int ch = GetCharPressed(); // Get pressed char for text input, using OS mapping
-    if (ch > 0) TraceLog(LOG_INFO,  "KEYBOARD TESTBED: CHAR PRESSED:   %c (%d)", ch, ch);
-}
-
-void draw_keyboard(int line01KeyWidths[15], int line01Keys[15], int line02KeyWidths[15], int line02Keys[15], int line03KeyWidths[15], int line03Keys[15], int line04KeyWidths[14], int line04Keys[14], int line05KeyWidths[14], int line05Keys[14], int line06KeyWidths[11], int line06Keys[11], Vector2 keyboardOffset) {
-    DrawText("KEYBOARD LAYOUT: ENG-US", 26, 38, 20, LIGHTGRAY);
-
-    // Keyboard line 01 - 15 keys
-    // ESC, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, IMP, CLOSE
-    for (int i = 0, recOffsetX = 0; i < 15; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y, (float)line01KeyWidths[i], 30.0f }, line01Keys[i]);
-        recOffsetX += line01KeyWidths[i] + KEY_REC_SPACING;
-    }
-
-    // Keyboard line 02 - 15 keys
-    // `, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, -, =, BACKSPACE, DEL
-    for (int i = 0, recOffsetX = 0; i < 15; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y + 30 + KEY_REC_SPACING, (float)line02KeyWidths[i], 38.0f }, line02Keys[i]);
-        recOffsetX += line02KeyWidths[i] + KEY_REC_SPACING;
-    }
-
-    // Keyboard line 03 - 15 keys
-    // TAB, Q, W, E, R, T, Y, U, I, O, P, [, ], \, INS
-    for (int i = 0, recOffsetX = 0; i < 15; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y + 30 + 38 + KEY_REC_SPACING*2, (float)line03KeyWidths[i], 38.0f }, line03Keys[i]);
-        recOffsetX += line03KeyWidths[i] + KEY_REC_SPACING;
-    }
-
-    // Keyboard line 04 - 14 keys
-    // MAYUS, A, S, D, F, G, H, J, K, L, ;, ', ENTER, REPAG
-    for (int i = 0, recOffsetX = 0; i < 14; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y + 30 + 38*2 + KEY_REC_SPACING*3, (float)line04KeyWidths[i], 38.0f }, line04Keys[i]);
-        recOffsetX += line04KeyWidths[i] + KEY_REC_SPACING;
-    }
-
-    // Keyboard line 05 - 14 keys
-    // LSHIFT, Z, X, C, V, B, N, M, ,, ., /, RSHIFT, UP, AVPAG
-    for (int i = 0, recOffsetX = 0; i < 14; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y + 30 + 38*3 + KEY_REC_SPACING*4, (float)line05KeyWidths[i], 38.0f }, line05Keys[i]);
-        recOffsetX += line05KeyWidths[i] + KEY_REC_SPACING;
-    }
-
-    // Keyboard line 06 - 11 keys
-    // LCTRL, WIN, LALT, SPACE, ALTGR, \, FN, RCTRL, LEFT, DOWN, RIGHT
-    for (int i = 0, recOffsetX = 0; i < 11; i++)
-    {
-        GuiKeyboardKey((Rectangle){ keyboardOffset.x + recOffsetX, keyboardOffset.y + 30 + 38*4 + KEY_REC_SPACING*5, (float)line06KeyWidths[i], 38.0f }, line06Keys[i]);
-        recOffsetX += line06KeyWidths[i] + KEY_REC_SPACING;
+void HandleHeaderButtonInteraction(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData) {
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        // Do some click handling
     }
 }
 
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
-int main(void)
+Clay_ElementDeclaration HeaderButtonStyle(bool hovered) {
+    return (Clay_ElementDeclaration) {
+        .layout = {.padding = {16, 16, 8, 8}},
+        .backgroundColor = hovered ? COLOR_ORANGE : COLOR_BLUE,
+    };
+}
+
+// Examples of re-usable "Components"
+void RenderHeaderButton(Clay_String text) {
+    CLAY_AUTO_ID(HeaderButtonStyle(Clay_Hovered())) {
+        CLAY_TEXT(text, CLAY_TEXT_CONFIG(headerTextConfig));
+    }
+}
+
+Clay_LayoutConfig dropdownTextItemLayout = { .padding = {8, 8, 4, 4} };
+Clay_TextElementConfig dropdownTextElementConfig = { .fontSize = 24, .textColor = {255,255,255,255} };
+
+void RenderDropdownTextItem(int index) {
+    CLAY_AUTO_ID({ .layout = dropdownTextItemLayout, .backgroundColor = {180, 180, 180, 255} }) {
+        CLAY_TEXT(CLAY_STRING("I'm a text field in a scroll container."), dropdownTextElementConfig);
+    }
+}
+
+Clay_RenderCommandArray CreateLayout(void) {
+    Clay_BeginLayout();
+    CLAY(CLAY_ID("OuterContainer"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) }, .padding = { 16, 16, 16, 16 }, .childGap = 16 }, .backgroundColor = {200, 200, 200, 255} }) {
+        CLAY(CLAY_ID("SideBar"), { .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing = { .width = CLAY_SIZING_FIXED(300), .height = CLAY_SIZING_GROW(0) }, .padding = {16, 16, 16, 16 }, .childGap = 16 }, .backgroundColor = {150, 150, 255, 255} }) {
+            CLAY(CLAY_ID("ProfilePictureOuter"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, .padding = { 8, 8, 8, 8 }, .childGap = 8, .childAlignment = { .y = CLAY_ALIGN_Y_CENTER } }, .backgroundColor = {130, 130, 255, 255} }) {
+                CLAY(CLAY_ID("ProfilePicture"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(60), .height = CLAY_SIZING_FIXED(60) } }, .image = { .imageData = &profilePicture }}) {}
+                CLAY_TEXT(profileText, CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {0, 0, 0, 255}, .textAlignment = CLAY_TEXT_ALIGN_RIGHT }));
+            }
+            CLAY(CLAY_ID("SidebarBlob1"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(50) }}, .backgroundColor = {110, 110, 255, 255} }) {}
+            CLAY(CLAY_ID("SidebarBlob2"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(50) }}, .backgroundColor = {110, 110, 255, 255} }) {}
+            CLAY(CLAY_ID("SidebarBlob3"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(50) }}, .backgroundColor = {110, 110, 255, 255} }) {}
+            CLAY(CLAY_ID("SidebarBlob4"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(50) }}, .backgroundColor = {110, 110, 255, 255} }) {}
+        }
+
+        CLAY(CLAY_ID("RightPanel"), { .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) }, .childGap = 16 }}) {
+            CLAY_AUTO_ID({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, .childAlignment = { .x = CLAY_ALIGN_X_RIGHT }, .padding = {8, 8, 8, 8 }, .childGap = 8 }, .backgroundColor =  {180, 180, 180, 255} }) {
+                RenderHeaderButton(CLAY_STRING("Header Item 1"));
+                RenderHeaderButton(CLAY_STRING("Header Item 2"));
+                RenderHeaderButton(CLAY_STRING("Header Item 3"));
+            }
+            CLAY(CLAY_ID("MainContent"), {
+                .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .padding = {16, 16, 16, 16}, .childGap = 16, .sizing = { .width = CLAY_SIZING_GROW(0) } },
+                .backgroundColor = {200, 200, 255, 255},
+                .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
+            })
+            {
+                 CLAY(CLAY_ID("FloatingContainer"), {
+                     .layout = { .sizing = { .width = CLAY_SIZING_PERCENT(0.5), .height = CLAY_SIZING_FIXED(300) }, .padding = { 16, 16, 16, 16 }},
+                     .backgroundColor = { 140, 80, 200, 200 },
+                     .floating = { .attachTo = CLAY_ATTACH_TO_PARENT, .zIndex = 1, .attachPoints = { CLAY_ATTACH_POINT_CENTER_TOP, CLAY_ATTACH_POINT_CENTER_TOP }, .offset = {0, 0} },
+                     .border = { .width = CLAY_BORDER_OUTSIDE(2), .color = {80, 80, 80, 255} },
+                 }) {
+                     CLAY_TEXT(CLAY_STRING("I'm an inline floating container."), CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {255,255,255,255} }));
+                 }
+
+                 CLAY_TEXT(CLAY_STRING("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt."),
+                     CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_24, .fontSize = 24, .textColor = {0,0,0,255} }));
+
+                 CLAY(CLAY_ID("Photos2"), { .layout = { .childGap = 16, .padding = { 16, 16, 16, 16 }}, .backgroundColor = {180, 180, 220, Clay_Hovered() ? 120 : 255} }) {
+                     CLAY(CLAY_ID("Picture4"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(120), .height = CLAY_SIZING_FIXED(120) }}, .image = { .imageData = &profilePicture }}) {}
+                     CLAY(CLAY_ID("Picture5"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(120), .height = CLAY_SIZING_FIXED(120) }}, .image = { .imageData = &profilePicture }}) {}
+                     CLAY(CLAY_ID("Picture6"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(120), .height = CLAY_SIZING_FIXED(120) }}, .image = { .imageData = &profilePicture }}) {}
+                 }
+
+                 CLAY_TEXT(CLAY_STRING("Faucibus purus in massa tempor nec. Nec ullamcorper sit amet risus nullam eget felis eget nunc. Diam vulputate ut pharetra sit amet aliquam id diam. Lacus suspendisse faucibus interdum posuere lorem. A diam sollicitudin tempor id. Amet massa vitae tortor condimentum lacinia. Aliquet nibh praesent tristique magna."),
+                           CLAY_TEXT_CONFIG({ .fontSize = 24, .lineHeight = 60, .textColor = {0,0,0,255}, .textAlignment = CLAY_TEXT_ALIGN_CENTER }));
+
+                 CLAY_TEXT(CLAY_STRING("Suspendisse in est ante in nibh. Amet venenatis urna cursus eget nunc scelerisque viverra. Elementum sagittis vitae et leo duis ut diam quam nulla. Enim nulla aliquet porttitor lacus. Pellentesque habitant morbi tristique senectus et. Facilisi nullam vehicula ipsum a arcu cursus vitae.\nSem fringilla ut morbi tincidunt. Euismod quis viverra nibh cras pulvinar mattis nunc sed. Velit sed ullamcorper morbi tincidunt ornare massa. Varius quam quisque id diam vel quam. Nulla pellentesque dignissim enim sit amet venenatis. Enim lobortis scelerisque fermentum dui faucibus in. Pretium viverra suspendisse potenti nullam ac tortor vitae. Lectus vestibulum mattis ullamcorper velit sed. Eget mauris pharetra et ultrices neque ornare aenean euismod elementum. Habitant morbi tristique senectus et. Integer vitae justo eget magna fermentum iaculis eu. Semper quis lectus nulla at volutpat diam. Enim praesent elementum facilisis leo. Massa vitae tortor condimentum lacinia quis vel."),
+                     CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {0,0,0,255} }));
+
+                 CLAY(CLAY_ID("Photos"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }, .childGap = 16, .padding = {16, 16, 16, 16} }, .backgroundColor = {180, 180, 220, 255} }) {
+                     CLAY(CLAY_ID("Picture2"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(120) }}, .aspectRatio = 0.5, .image = { .imageData = &profilePicture }}) {}
+                     CLAY(CLAY_ID("Picture1"), { .layout = { .childAlignment = { .x = CLAY_ALIGN_X_CENTER }, .layoutDirection = CLAY_TOP_TO_BOTTOM, .padding = {8, 8, 8, 8} }, .backgroundColor = {170, 170, 220, 255} }) {
+                         CLAY(CLAY_ID("ProfilePicture2"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(60), .height = CLAY_SIZING_FIXED(60) }}, .image = { .imageData = &profilePicture }}) {}
+                         CLAY_TEXT(CLAY_STRING("Image caption below"), CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {0,0,0,255} }));
+                     }
+                     CLAY(CLAY_ID("Picture3"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(120) }}, .aspectRatio = 2, .image = { .imageData = &profilePicture }}) {}
+                 }
+
+                 CLAY_TEXT(CLAY_STRING("Amet cursus sit amet dictum sit amet justo donec. Et malesuada fames ac turpis egestas maecenas. A lacus vestibulum sed arcu non odio euismod lacinia. Gravida neque convallis a cras. Dui nunc mattis enim ut tellus elementum sagittis vitae et. Orci sagittis eu volutpat odio facilisis mauris. Neque gravida in fermentum et sollicitudin ac orci. Ultrices dui sapien eget mi proin sed libero. Euismod quis viverra nibh cras pulvinar mattis. Diam volutpat commodo sed egestas egestas. In fermentum posuere urna nec tincidunt praesent semper. Integer eget aliquet nibh praesent tristique magna.\nId cursus metus aliquam eleifend mi in. Sed pulvinar proin gravida hendrerit lectus a. Etiam tempor orci eu lobortis elementum nibh tellus. Nullam vehicula ipsum a arcu cursus vitae. Elit scelerisque mauris pellentesque pulvinar pellentesque habitant morbi tristique senectus. Condimentum lacinia quis vel eros donec ac odio. Mattis pellentesque id nibh tortor id aliquet lectus. Turpis egestas integer eget aliquet nibh praesent tristique. Porttitor massa id neque aliquam vestibulum morbi. Mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien et. Nunc scelerisque viverra mauris in aliquam sem fringilla. Suspendisse ultrices gravida dictum fusce ut placerat orci nulla.\nLacus laoreet non curabitur gravida arcu ac tortor dignissim. Urna nec tincidunt praesent semper feugiat nibh sed pulvinar. Tristique senectus et netus et malesuada fames ac. Nunc aliquet bibendum enim facilisis gravida. Egestas maecenas pharetra convallis posuere morbi leo urna molestie. Sapien nec sagittis aliquam malesuada bibendum arcu vitae elementum curabitur. Ac turpis egestas maecenas pharetra convallis posuere morbi leo urna. Viverra vitae congue eu consequat. Aliquet enim tortor at auctor urna. Ornare massa eget egestas purus viverra accumsan in nisl nisi. Elit pellentesque habitant morbi tristique senectus et netus et malesuada.\nSuspendisse ultrices gravida dictum fusce ut placerat orci nulla pellentesque. Lobortis feugiat vivamus at augue eget arcu. Vitae justo eget magna fermentum iaculis eu. Gravida rutrum quisque non tellus orci. Ipsum faucibus vitae aliquet nec. Nullam non nisi est sit amet. Nunc consequat interdum varius sit amet mattis vulputate enim. Sem fringilla ut morbi tincidunt augue interdum. Vitae purus faucibus ornare suspendisse. Massa tincidunt nunc pulvinar sapien et. Fringilla ut morbi tincidunt augue interdum velit euismod in. Donec massa sapien faucibus et. Est placerat in egestas erat imperdiet. Gravida rutrum quisque non tellus. Morbi non arcu risus quis varius quam quisque id diam. Habitant morbi tristique senectus et netus et malesuada fames ac. Eget lorem dolor sed viverra.\nOrnare massa eget egestas purus viverra. Varius vel pharetra vel turpis nunc eget lorem. Consectetur purus ut faucibus pulvinar elementum. Placerat in egestas erat imperdiet sed euismod nisi. Interdum velit euismod in pellentesque massa placerat duis ultricies lacus. Aliquam nulla facilisi cras fermentum odio eu. Est pellentesque elit ullamcorper dignissim cras tincidunt. Nunc sed id semper risus in hendrerit gravida rutrum. A pellentesque sit amet porttitor eget dolor morbi. Pellentesque habitant morbi tristique senectus et netus et malesuada fames. Nisl nunc mi ipsum faucibus vitae aliquet nec ullamcorper. Sed id semper risus in hendrerit gravida. Tincidunt praesent semper feugiat nibh. Aliquet lectus proin nibh nisl condimentum id venenatis a. Enim sit amet venenatis urna cursus eget. In egestas erat imperdiet sed euismod nisi porta lorem mollis. Lacinia quis vel eros donec ac odio tempor orci. Donec pretium vulputate sapien nec sagittis aliquam malesuada bibendum arcu. Erat pellentesque adipiscing commodo elit at.\nEgestas sed sed risus pretium quam vulputate. Vitae congue mauris rhoncus aenean vel elit scelerisque mauris pellentesque. Aliquam malesuada bibendum arcu vitae elementum. Congue mauris rhoncus aenean vel elit scelerisque mauris. Pellentesque dignissim enim sit amet venenatis urna cursus. Et malesuada fames ac turpis egestas sed tempus urna. Vel fringilla est ullamcorper eget nulla facilisi etiam dignissim. Nibh cras pulvinar mattis nunc sed blandit libero. Fringilla est ullamcorper eget nulla facilisi etiam dignissim. Aenean euismod elementum nisi quis eleifend quam adipiscing vitae proin. Mauris pharetra et ultrices neque ornare aenean euismod elementum. Ornare quam viverra orci sagittis eu. Odio ut sem nulla pharetra diam sit amet nisl suscipit. Ornare lectus sit amet est. Ullamcorper sit amet risus nullam eget. Tincidunt lobortis feugiat vivamus at augue eget arcu dictum.\nUrna nec tincidunt praesent semper feugiat nibh. Ut venenatis tellus in metus vulputate eu scelerisque felis. Cursus risus at ultrices mi tempus. In pellentesque massa placerat duis ultricies lacus sed turpis. Platea dictumst quisque sagittis purus. Cras adipiscing enim eu turpis egestas. Egestas sed tempus urna et pharetra pharetra. Netus et malesuada fames ac turpis egestas integer eget aliquet. Ac turpis egestas sed tempus. Sed lectus vestibulum mattis ullamcorper velit sed. Ante metus dictum at tempor commodo ullamcorper a. Augue neque gravida in fermentum et sollicitudin ac. Praesent semper feugiat nibh sed pulvinar proin gravida. Metus aliquam eleifend mi in nulla posuere sollicitudin aliquam ultrices. Neque gravida in fermentum et sollicitudin ac orci phasellus egestas.\nRidiculus mus mauris vitae ultricies. Morbi quis commodo odio aenean. Duis ultricies lacus sed turpis. Non pulvinar neque laoreet suspendisse interdum consectetur. Scelerisque eleifend donec pretium vulputate sapien nec sagittis aliquam. Volutpat est velit egestas dui id ornare arcu odio ut. Viverra tellus in hac habitasse platea dictumst vestibulum rhoncus est. Vestibulum lectus mauris ultrices eros. Sed blandit libero volutpat sed cras ornare. Id leo in vitae turpis massa sed elementum tempus. Gravida dictum fusce ut placerat orci nulla pellentesque. Pretium quam vulputate dignissim suspendisse in. Nisl suscipit adipiscing bibendum est ultricies integer quis auctor. Risus viverra adipiscing at in tellus. Turpis nunc eget lorem dolor sed viverra ipsum. Senectus et netus et malesuada fames ac. Habitasse platea dictumst vestibulum rhoncus est. Nunc sed id semper risus in hendrerit gravida. Felis eget velit aliquet sagittis id. Eget felis eget nunc lobortis.\nMaecenas pharetra convallis posuere morbi leo. Maecenas volutpat blandit aliquam etiam. A condimentum vitae sapien pellentesque habitant morbi tristique senectus et. Pulvinar mattis nunc sed blandit libero volutpat sed. Feugiat in ante metus dictum at tempor commodo ullamcorper. Vel pharetra vel turpis nunc eget lorem dolor. Est placerat in egestas erat imperdiet sed euismod. Quisque non tellus orci ac auctor augue mauris augue. Placerat vestibulum lectus mauris ultrices eros in cursus turpis. Enim nunc faucibus a pellentesque sit. Adipiscing vitae proin sagittis nisl. Iaculis at erat pellentesque adipiscing commodo elit at imperdiet. Aliquam sem fringilla ut morbi.\nArcu odio ut sem nulla pharetra diam sit amet nisl. Non diam phasellus vestibulum lorem sed. At erat pellentesque adipiscing commodo elit at. Lacus luctus accumsan tortor posuere ac ut consequat. Et malesuada fames ac turpis egestas integer. Tristique magna sit amet purus. A condimentum vitae sapien pellentesque habitant. Quis varius quam quisque id diam vel quam. Est ullamcorper eget nulla facilisi etiam dignissim diam quis. Augue interdum velit euismod in pellentesque massa. Elit scelerisque mauris pellentesque pulvinar pellentesque habitant. Vulputate eu scelerisque felis imperdiet. Nibh tellus molestie nunc non blandit massa. Velit euismod in pellentesque massa placerat. Sed cras ornare arcu dui. Ut sem viverra aliquet eget sit. Eu lobortis elementum nibh tellus molestie nunc non. Blandit libero volutpat sed cras ornare arcu dui vivamus.\nSit amet aliquam id diam maecenas. Amet risus nullam eget felis eget nunc lobortis mattis aliquam. Magna sit amet purus gravida. Egestas purus viverra accumsan in nisl nisi. Leo duis ut diam quam. Ante metus dictum at tempor commodo ullamcorper. Ac turpis egestas integer eget. Fames ac turpis egestas integer eget aliquet nibh. Sem integer vitae justo eget magna fermentum. Semper auctor neque vitae tempus quam pellentesque nec nam aliquam. Vestibulum mattis ullamcorper velit sed. Consectetur adipiscing elit duis tristique sollicitudin nibh. Massa id neque aliquam vestibulum morbi blandit cursus risus.\nCursus sit amet dictum sit amet justo donec enim diam. Egestas erat imperdiet sed euismod. Nullam vehicula ipsum a arcu cursus vitae congue mauris. Habitasse platea dictumst vestibulum rhoncus est pellentesque elit. Duis ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Faucibus ornare suspendisse sed nisi lacus sed viverra. Pretium fusce id velit ut tortor pretium viverra. Fermentum odio eu feugiat pretium nibh ipsum consequat nisl vel. Senectus et netus et malesuada. Tellus pellentesque eu tincidunt tortor aliquam. Aenean sed adipiscing diam donec adipiscing tristique risus nec feugiat. Quis vel eros donec ac odio. Id interdum velit laoreet id donec ultrices tincidunt.\nMassa id neque aliquam vestibulum morbi blandit cursus risus at. Enim tortor at auctor urna nunc id cursus metus. Lorem ipsum dolor sit amet consectetur. At quis risus sed vulputate odio. Facilisis mauris sit amet massa vitae tortor condimentum lacinia quis. Et malesuada fames ac turpis egestas maecenas. Bibendum arcu vitae elementum curabitur vitae nunc sed velit dignissim. Viverra orci sagittis eu volutpat odio facilisis mauris. Adipiscing bibendum est ultricies integer quis auctor elit sed. Neque viverra justo nec ultrices dui sapien. Elementum nibh tellus molestie nunc non blandit massa enim. Euismod elementum nisi quis eleifend quam adipiscing vitae proin sagittis. Faucibus ornare suspendisse sed nisi. Quis viverra nibh cras pulvinar mattis nunc sed blandit. Tristique senectus et netus et. Magnis dis parturient montes nascetur ridiculus mus.\nDolor magna eget est lorem ipsum dolor. Nibh sit amet commodo nulla. Donec pretium vulputate sapien nec sagittis aliquam malesuada. Cras adipiscing enim eu turpis egestas pretium. Cras ornare arcu dui vivamus arcu felis bibendum ut tristique. Mus mauris vitae ultricies leo integer. In nulla posuere sollicitudin aliquam ultrices sagittis orci. Quis hendrerit dolor magna eget. Nisl tincidunt eget nullam non. Vitae congue eu consequat ac felis donec et odio. Vivamus at augue eget arcu dictum varius duis at. Ornare quam viverra orci sagittis.\nErat nam at lectus urna duis convallis. Massa placerat duis ultricies lacus sed turpis tincidunt id aliquet. Est ullamcorper eget nulla facilisi etiam dignissim diam. Arcu vitae elementum curabitur vitae nunc sed velit dignissim sodales. Tortor vitae purus faucibus ornare suspendisse sed nisi lacus. Neque viverra justo nec ultrices dui sapien eget mi proin. Viverra accumsan in nisl nisi scelerisque eu ultrices. Consequat interdum varius sit amet mattis. In aliquam sem fringilla ut morbi. Eget arcu dictum varius duis at. Nulla aliquet porttitor lacus luctus accumsan tortor posuere. Arcu bibendum at varius vel pharetra vel turpis. Hac habitasse platea dictumst quisque sagittis purus sit amet. Sapien eget mi proin sed libero enim sed. Quam elementum pulvinar etiam non quam lacus suspendisse faucibus interdum. Semper viverra nam libero justo. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Et malesuada fames ac turpis egestas maecenas pharetra convallis posuere.\nTurpis egestas sed tempus urna et pharetra pharetra massa. Gravida in fermentum et sollicitudin ac orci phasellus. Ornare suspendisse sed nisi lacus sed viverra tellus in. Fames ac turpis egestas maecenas pharetra convallis posuere. Mi proin sed libero enim sed faucibus turpis. Sit amet mauris commodo quis imperdiet massa tincidunt nunc. Ut etiam sit amet nisl purus in mollis nunc. Habitasse platea dictumst quisque sagittis purus sit amet volutpat consequat. Eget aliquet nibh praesent tristique magna. Sit amet est placerat in egestas erat. Commodo sed egestas egestas fringilla. Enim nulla aliquet porttitor lacus luctus accumsan tortor posuere ac. Et molestie ac feugiat sed lectus vestibulum mattis ullamcorper. Dignissim convallis aenean et tortor at risus viverra. Morbi blandit cursus risus at ultrices mi. Ac turpis egestas integer eget aliquet nibh praesent tristique magna.\nVolutpat sed cras ornare arcu dui. Egestas erat imperdiet sed euismod nisi porta lorem mollis aliquam. Viverra justo nec ultrices dui sapien. Amet risus nullam eget felis eget nunc lobortis. Metus aliquam eleifend mi in. Ut eu sem integer vitae. Auctor elit sed vulputate mi sit amet. Nisl nisi scelerisque eu ultrices. Dictum fusce ut placerat orci nulla. Pellentesque habitant morbi tristique senectus et. Auctor elit sed vulputate mi sit. Tincidunt arcu non sodales neque. Mi in nulla posuere sollicitudin aliquam. Morbi non arcu risus quis varius quam quisque id diam. Cras adipiscing enim eu turpis egestas pretium aenean pharetra magna. At auctor urna nunc id cursus metus aliquam. Mauris a diam maecenas sed enim ut sem viverra. Nunc scelerisque viverra mauris in. In iaculis nunc sed augue lacus viverra vitae congue eu. Volutpat blandit aliquam etiam erat velit scelerisque in dictum non."),
+                     CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {0,0,0,255} }));
+            }
+        }
+
+        CLAY(CLAY_ID("Blob4Floating2"), { .floating = { .attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID, .zIndex = 1, .parentId = Clay_GetElementId(CLAY_STRING("SidebarBlob4")).id } }) {
+            CLAY(CLAY_ID("ScrollContainer"), { .layout = { .sizing = { .height = CLAY_SIZING_FIXED(200) }, .childGap = 2 }, .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
+                CLAY(CLAY_ID("FloatingContainer2"), { .layout.sizing.height = CLAY_SIZING_GROW(), .floating = { .attachTo = CLAY_ATTACH_TO_PARENT, .zIndex = 1 } }) {
+                    CLAY(CLAY_ID("FloatingContainerInner"), { .layout = { .sizing = { .width = CLAY_SIZING_FIXED(300), .height = CLAY_SIZING_GROW() }, .padding = {16, 16, 16, 16} }, .backgroundColor = {140,80, 200, 200} }) {
+                        CLAY_TEXT(CLAY_STRING("I'm an inline floating container."), CLAY_TEXT_CONFIG({ .fontSize = 24, .textColor = {255,255,255,255} }));
+                    }
+                }
+                CLAY(CLAY_ID("ScrollContainerInner"), { .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }, .backgroundColor = {160, 160, 160, 255} }) {
+                    for (int i = 0; i < 100; i++) {
+                        RenderDropdownTextItem(i);
+                    }
+                }
+            }
+        }
+        Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(Clay_GetElementId(CLAY_STRING("MainContent")));
+        if (scrollData.found) {
+            CLAY(CLAY_ID("ScrollBar"), {
+                .floating = {
+                    .attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
+                    .offset = { .y = -(scrollData.scrollPosition->y / scrollData.contentDimensions.height) * scrollData.scrollContainerDimensions.height },
+                    .zIndex = 1,
+                    .parentId = Clay_GetElementId(CLAY_STRING("MainContent")).id,
+                    .attachPoints = { .element = CLAY_ATTACH_POINT_RIGHT_TOP, .parent = CLAY_ATTACH_POINT_RIGHT_TOP }
+                }
+            }) {
+                CLAY(CLAY_ID("ScrollBarButton"), {
+                    .layout = { .sizing = {CLAY_SIZING_FIXED(12), CLAY_SIZING_FIXED((scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height) * scrollData.scrollContainerDimensions.height) }},
+                    .backgroundColor = Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ScrollBar"))) ? (Clay_Color){100, 100, 140, 150} : (Clay_Color){120, 120, 160, 150} ,
+                    .cornerRadius = CLAY_CORNER_RADIUS(6)
+                }) {}
+            }
+        }
+    }
+    return Clay_EndLayout(GetFrameTime());
+}
+
+typedef struct
 {
-    // Initialization
-    //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    Clay_Vector2 clickOrigin;
+    Clay_Vector2 positionOrigin;
+    bool mouseDown;
+} ScrollbarData;
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - keyboard testbed");
-    SetExitKey(KEY_NULL); // Avoid exit on KEY_ESCAPE
+ScrollbarData scrollbarData = {0};
 
-    // Keyboard line 01
-    int line01KeyWidths[15] = { 0 };
-    for (int i = 0; i < 15; i++) line01KeyWidths[i] = 45;
-    line01KeyWidths[13] = 62;   // PRINTSCREEN
-    int line01Keys[15] = {
-        KEY_ESCAPE, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,
-        KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11,
-        KEY_F12, KEY_PRINT_SCREEN, KEY_PAUSE
-    };
+bool debugEnabled = false;
 
-    // Keyboard line 02
-    int line02KeyWidths[15] = { 0 };
-    for (int i = 0; i < 15; i++) line02KeyWidths[i] = 45;
-    line02KeyWidths[0] = 25;    // GRAVE
-    line02KeyWidths[13] = 82;   // BACKSPACE
-    int line02Keys[15] = {
-        KEY_GRAVE, KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR,
-        KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE,
-        KEY_ZERO, KEY_MINUS, KEY_EQUAL, KEY_BACKSPACE, KEY_DELETE };
+void UpdateDrawFrame(Font* fonts)
+{
+    Vector2 mouseWheelDelta = GetMouseWheelMoveV();
+    float mouseWheelX = mouseWheelDelta.x;
+    float mouseWheelY = mouseWheelDelta.y;
 
-    // Keyboard line 03
-    int line03KeyWidths[15] = { 0 };
-    for (int i = 0; i < 15; i++) line03KeyWidths[i] = 45;
-    line03KeyWidths[0] = 50;    // TAB
-    line03KeyWidths[13] = 57;   // BACKSLASH
-    int line03Keys[15] = {
-        KEY_TAB, KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y,
-        KEY_U, KEY_I, KEY_O, KEY_P, KEY_LEFT_BRACKET,
-        KEY_RIGHT_BRACKET, KEY_BACKSLASH, KEY_INSERT
-    };
+    if (IsKeyPressed(KEY_D)) {
+        debugEnabled = !debugEnabled;
+        Clay_SetDebugModeEnabled(debugEnabled);
+    }
+    //----------------------------------------------------------------------------------
+    // Handle scroll containers
+    Clay_Vector2 mousePosition = RAYLIB_VECTOR2_TO_CLAY_VECTOR2(GetMousePosition());
+    Clay_SetPointerState(mousePosition, IsMouseButtonDown(0) && !scrollbarData.mouseDown);
+    Clay_SetLayoutDimensions((Clay_Dimensions) { (float)GetScreenWidth(), (float)GetScreenHeight() });
+    if (!IsMouseButtonDown(0)) {
+        scrollbarData.mouseDown = false;
+    }
 
-    // Keyboard line 04
-    int line04KeyWidths[14] = { 0 };
-    for (int i = 0; i < 14; i++) line04KeyWidths[i] = 45;
-    line04KeyWidths[0] = 68;    // CAPS
-    line04KeyWidths[12] = 88;   // ENTER
-    int line04Keys[14] = {
-        KEY_CAPS_LOCK, KEY_A, KEY_S, KEY_D, KEY_F, KEY_G,
-        KEY_H, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON,
-        KEY_APOSTROPHE, KEY_ENTER, KEY_PAGE_UP
-    };
+    if (IsMouseButtonDown(0) && !scrollbarData.mouseDown && Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ScrollBar")))) {
+        Clay_ScrollContainerData scrollContainerData = Clay_GetScrollContainerData(Clay_GetElementId(CLAY_STRING("MainContent")));
+        scrollbarData.clickOrigin = mousePosition;
+        scrollbarData.positionOrigin = *scrollContainerData.scrollPosition;
+        scrollbarData.mouseDown = true;
+    } else if (scrollbarData.mouseDown) {
+        Clay_ScrollContainerData scrollContainerData = Clay_GetScrollContainerData(Clay_GetElementId(CLAY_STRING("MainContent")));
+        if (scrollContainerData.contentDimensions.height > 0) {
+            Clay_Vector2 ratio = (Clay_Vector2) {
+                scrollContainerData.contentDimensions.width / scrollContainerData.scrollContainerDimensions.width,
+                scrollContainerData.contentDimensions.height / scrollContainerData.scrollContainerDimensions.height,
+            };
+            if (scrollContainerData.config.vertical) {
+                scrollContainerData.scrollPosition->y = scrollbarData.positionOrigin.y + (scrollbarData.clickOrigin.y - mousePosition.y) * ratio.y;
+            }
+            if (scrollContainerData.config.horizontal) {
+                scrollContainerData.scrollPosition->x = scrollbarData.positionOrigin.x + (scrollbarData.clickOrigin.x - mousePosition.x) * ratio.x;
+            }
+        }
+    }
 
-    // Keyboard line 05
-    int line05KeyWidths[14] = { 0 };
-    for (int i = 0; i < 14; i++) line05KeyWidths[i] = 45;
-    line05KeyWidths[0] = 80;    // LSHIFT
-    line05KeyWidths[11] = 76;   // RSHIFT
-    int line05Keys[14] = {
-        KEY_LEFT_SHIFT, KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B,
-        KEY_N, KEY_M, KEY_COMMA, KEY_PERIOD, /*KEY_MINUS*/
-        KEY_SLASH, KEY_RIGHT_SHIFT, KEY_UP, KEY_PAGE_DOWN
-    };
+    Clay_UpdateScrollContainers(true, (Clay_Vector2) {mouseWheelX, mouseWheelY}, GetFrameTime());
+    // Generate the auto layout for rendering
+    double currentTime = GetTime();
+    Clay_RenderCommandArray renderCommands = CreateLayout();
+    printf("layout time: %f microseconds\n", (GetTime() - currentTime) * 1000 * 1000);
+    // RENDERING ---------------------------------
+//    currentTime = GetTime();
+    BeginDrawing();
+    ClearBackground(BLACK);
+    Clay_Raylib_Render(renderCommands, fonts);
+    EndDrawing();
+//    printf("render time: %f ms\n", (GetTime() - currentTime) * 1000);
 
-    // Keyboard line 06
-    int line06KeyWidths[11] = { 0 };
-    for (int i = 0; i < 11; i++) line06KeyWidths[i] = 45;
-    line06KeyWidths[0] = 80;    // LCTRL
-    line06KeyWidths[3] = 208;   // SPACE
-    line06KeyWidths[7] = 60;    // RCTRL
-    int line06Keys[11] = {
-        KEY_LEFT_CONTROL, KEY_LEFT_SUPER, KEY_LEFT_ALT,
-        KEY_SPACE, KEY_RIGHT_ALT, 162, KEY_NULL,
-        KEY_RIGHT_CONTROL, KEY_LEFT, KEY_DOWN, KEY_RIGHT
-    };
+    //----------------------------------------------------------------------------------
+}
 
-    Vector2 keyboardOffset = { 26, 80 };
+bool reinitializeClay = false;
 
-    SetTargetFPS(60);
+void HandleClayErrors(Clay_ErrorData errorData) {
+    printf("%s", errorData.errorText.chars);
+    if (errorData.errorType == CLAY_ERROR_TYPE_ELEMENTS_CAPACITY_EXCEEDED) {
+        reinitializeClay = true;
+        Clay_SetMaxElementCount(Clay_GetMaxElementCount() * 2);
+    } else if (errorData.errorType == CLAY_ERROR_TYPE_TEXT_MEASUREMENT_CAPACITY_EXCEEDED) {
+        reinitializeClay = true;
+        Clay_SetMaxMeasureTextCacheWordCount(Clay_GetMaxMeasureTextCacheWordCount() * 2);
+    }
+}
+
+int main(void) {
+    uint64_t totalMemorySize = Clay_MinMemorySize();
+    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
+    Clay_Initialize(clayMemory, (Clay_Dimensions) { (float)GetScreenWidth(), (float)GetScreenHeight() }, (Clay_ErrorHandler) { HandleClayErrors, 0 });
+    Clay_Raylib_Initialize(1024, 768, "Clay - Raylib Renderer Example", FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    profilePicture = LoadTexture("resources/profile-picture.png");
+
+    Font fonts[2];
+    fonts[FONT_ID_BODY_24] = LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400);
+	SetTextureFilter(fonts[FONT_ID_BODY_24].texture, TEXTURE_FILTER_BILINEAR);
+    fonts[FONT_ID_BODY_16] = LoadFontEx("resources/Roboto-Regular.ttf", 32, 0, 400);
+    SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
+    Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
+
     //--------------------------------------------------------------------------------------
 
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
-        // Update
-        //----------------------------------------------------------------------------------
-        update_keyboard();
-        //----------------------------------------------------------------------------------
-
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
-        draw_keyboard(line01KeyWidths, line01Keys, line02KeyWidths, line02Keys, line03KeyWidths, line03Keys, line04KeyWidths,
-                    line04Keys, line05KeyWidths, line05Keys, line06KeyWidths, line06Keys, keyboardOffset);
-
-        EndDrawing();
-        //----------------------------------------------------------------------------------
+        if (reinitializeClay) {
+            Clay_SetMaxElementCount(8192);
+            totalMemorySize = Clay_MinMemorySize();
+            clayMemory = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
+            Clay_Initialize(clayMemory, (Clay_Dimensions) { (float)GetScreenWidth(), (float)GetScreenHeight() }, (Clay_ErrorHandler) { HandleClayErrors, 0 });
+            reinitializeClay = false;
+        }
+        UpdateDrawFrame(fonts);
     }
-
-    // De-Initialization
-    //--------------------------------------------------------------------------------------
-    CloseWindow();        // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
-
+    Clay_Raylib_Close();
     return 0;
-}
-
-//------------------------------------------------------------------------------------
-// Module Functions Definition
-//------------------------------------------------------------------------------------
-// Get keyboard keycode as text (US keyboard)
-// NOTE: Mapping for other keyboard layouts can be done here
-static const char *GetKeyText(int key)
-{
-    switch (key)
-    {
-        case KEY_APOSTROPHE      : return "'";          // Key: '
-        case KEY_COMMA           : return ",";          // Key: ,
-        case KEY_MINUS           : return "-";          // Key: -
-        case KEY_PERIOD          : return ".";          // Key: .
-        case KEY_SLASH           : return "/";          // Key: /
-        case KEY_ZERO            : return "0";          // Key: 0
-        case KEY_ONE             : return "1";          // Key: 1
-        case KEY_TWO             : return "2";          // Key: 2
-        case KEY_THREE           : return "3";          // Key: 3
-        case KEY_FOUR            : return "4";          // Key: 4
-        case KEY_FIVE            : return "5";          // Key: 5
-        case KEY_SIX             : return "6";          // Key: 6
-        case KEY_SEVEN           : return "7";          // Key: 7
-        case KEY_EIGHT           : return "8";          // Key: 8
-        case KEY_NINE            : return "9";          // Key: 9
-        case KEY_SEMICOLON       : return ";";          // Key: ;
-        case KEY_EQUAL           : return "=";          // Key: =
-        case KEY_A               : return "A";          // Key: A | a
-        case KEY_B               : return "B";          // Key: B | b
-        case KEY_C               : return "C";          // Key: C | c
-        case KEY_D               : return "D";          // Key: D | d
-        case KEY_E               : return "E";          // Key: E | e
-        case KEY_F               : return "F";          // Key: F | f
-        case KEY_G               : return "G";          // Key: G | g
-        case KEY_H               : return "H";          // Key: H | h
-        case KEY_I               : return "I";          // Key: I | i
-        case KEY_J               : return "J";          // Key: J | j
-        case KEY_K               : return "K";          // Key: K | k
-        case KEY_L               : return "L";          // Key: L | l
-        case KEY_M               : return "M";          // Key: M | m
-        case KEY_N               : return "N";          // Key: N | n
-        case KEY_O               : return "O";          // Key: O | o
-        case KEY_P               : return "P";          // Key: P | p
-        case KEY_Q               : return "Q";          // Key: Q | q
-        case KEY_R               : return "R";          // Key: R | r
-        case KEY_S               : return "S";          // Key: S | s
-        case KEY_T               : return "T";          // Key: T | t
-        case KEY_U               : return "U";          // Key: U | u
-        case KEY_V               : return "V";          // Key: V | v
-        case KEY_W               : return "W";          // Key: W | w
-        case KEY_X               : return "X";          // Key: X | x
-        case KEY_Y               : return "Y";          // Key: Y | y
-        case KEY_Z               : return "Z";          // Key: Z | z
-        case KEY_LEFT_BRACKET    : return "[";          // Key: [
-        case KEY_BACKSLASH       : return "\\";         // Key: '\'
-        case KEY_RIGHT_BRACKET   : return "]";          // Key: ]
-        case KEY_GRAVE           : return "`";          // Key: `
-        case KEY_SPACE           : return "SPACE";      // Key: Space
-        case KEY_ESCAPE          : return "ESC";        // Key: Esc
-        case KEY_ENTER           : return "ENTER";      // Key: Enter
-        case KEY_TAB             : return "TAB";        // Key: Tab
-        case KEY_BACKSPACE       : return "BACK";       // Key: Backspace
-        case KEY_INSERT          : return "INS";        // Key: Ins
-        case KEY_DELETE          : return "DEL";        // Key: Del
-        case KEY_RIGHT           : return "RIGHT";      // Key: Cursor right
-        case KEY_LEFT            : return "LEFT";       // Key: Cursor left
-        case KEY_DOWN            : return "DOWN";       // Key: Cursor down
-        case KEY_UP              : return "UP";         // Key: Cursor up
-        case KEY_PAGE_UP         : return "PGUP";       // Key: Page up
-        case KEY_PAGE_DOWN       : return "PGDOWN";     // Key: Page down
-        case KEY_HOME            : return "HOME";       // Key: Home
-        case KEY_END             : return "END";        // Key: End
-        case KEY_CAPS_LOCK       : return "CAPS";       // Key: Caps lock
-        case KEY_SCROLL_LOCK     : return "LOCK";       // Key: Scroll down
-        case KEY_NUM_LOCK        : return "NUMLOCK";    // Key: Num lock
-        case KEY_PRINT_SCREEN    : return "PRINTSCR";   // Key: Print screen
-        case KEY_PAUSE           : return "PAUSE";      // Key: Pause
-        case KEY_F1              : return "F1";         // Key: F1
-        case KEY_F2              : return "F2";         // Key: F2
-        case KEY_F3              : return "F3";         // Key: F3
-        case KEY_F4              : return "F4";         // Key: F4
-        case KEY_F5              : return "F5";         // Key: F5
-        case KEY_F6              : return "F6";         // Key: F6
-        case KEY_F7              : return "F7";         // Key: F7
-        case KEY_F8              : return "F8";         // Key: F8
-        case KEY_F9              : return "F9";         // Key: F9
-        case KEY_F10             : return "F10";        // Key: F10
-        case KEY_F11             : return "F11";        // Key: F11
-        case KEY_F12             : return "F12";        // Key: F12
-        case KEY_LEFT_SHIFT      : return "LSHIFT";     // Key: Shift left
-        case KEY_LEFT_CONTROL    : return "LCTRL";      // Key: Control left
-        case KEY_LEFT_ALT        : return "LALT";       // Key: Alt left
-        case KEY_LEFT_SUPER      : return "WIN";        // Key: Super left
-        case KEY_RIGHT_SHIFT     : return "RSHIFT";     // Key: Shift right
-        case KEY_RIGHT_CONTROL   : return "RCTRL";      // Key: Control right
-        case KEY_RIGHT_ALT       : return "ALTGR";      // Key: Alt right
-        case KEY_RIGHT_SUPER     : return "RSUPER";     // Key: Super right
-        case KEY_KB_MENU         : return "KBMENU";     // Key: KB menu
-        case KEY_KP_0            : return "KP0";        // Key: Keypad 0
-        case KEY_KP_1            : return "KP1";        // Key: Keypad 1
-        case KEY_KP_2            : return "KP2";        // Key: Keypad 2
-        case KEY_KP_3            : return "KP3";        // Key: Keypad 3
-        case KEY_KP_4            : return "KP4";        // Key: Keypad 4
-        case KEY_KP_5            : return "KP5";        // Key: Keypad 5
-        case KEY_KP_6            : return "KP6";        // Key: Keypad 6
-        case KEY_KP_7            : return "KP7";        // Key: Keypad 7
-        case KEY_KP_8            : return "KP8";        // Key: Keypad 8
-        case KEY_KP_9            : return "KP9";        // Key: Keypad 9
-        case KEY_KP_DECIMAL      : return "KPDEC";      // Key: Keypad .
-        case KEY_KP_DIVIDE       : return "KPDIV";      // Key: Keypad /
-        case KEY_KP_MULTIPLY     : return "KPMUL";      // Key: Keypad *
-        case KEY_KP_SUBTRACT     : return "KPSUB";      // Key: Keypad -
-        case KEY_KP_ADD          : return "KPADD";      // Key: Keypad +
-        case KEY_KP_ENTER        : return "KPENTER";    // Key: Keypad Enter
-        case KEY_KP_EQUAL        : return "KPEQU";      // Key: Keypad =
-        default: return "";
-    }
-}
-
-// Draw keyboard key
-static void GuiKeyboardKey(Rectangle bounds, int key)
-{
-    if (key == KEY_NULL) DrawRectangleLinesEx(bounds, 2.0f, LIGHTGRAY);
-    else
-    {
-        if (IsKeyDown(key))
-        {
-            DrawRectangleLinesEx(bounds, 2.0f, MAROON);
-            DrawText(GetKeyText(key), (int)(bounds.x + 4), (int)(bounds.y + 4), 10, MAROON);
-        }
-        else
-        {
-            DrawRectangleLinesEx(bounds, 2.0f, DARKGRAY);
-            DrawText(GetKeyText(key), (int)(bounds.x + 4), (int)(bounds.y + 4), 10, DARKGRAY);
-        }
-    }
-
-    if (CheckCollisionPointRec(GetMousePosition(), bounds))
-    {
-        DrawRectangleRec(bounds, Fade(RED, 0.2f));
-        DrawRectangleLinesEx(bounds, 3.0f, RED);
-    }
 }
