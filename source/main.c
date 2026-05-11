@@ -7,7 +7,6 @@ const uint32_t FONT_ID_BODY_16 = 1;
 #define COLOR_ORANGE (Clay_Color) {225, 138, 50, 255}
 #define COLOR_BLUE (Clay_Color) {111, 173, 162, 255}
 
-Texture2D profilePicture;
 #define RAYLIB_VECTOR2_TO_CLAY_VECTOR2(vector) (Clay_Vector2) { .x = vector.x, .y = vector.y }
 
 Clay_String profileText = CLAY_STRING_CONST("Profile Page one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen");
@@ -327,7 +326,6 @@ int main(void) {
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
     Clay_Context *context = Clay_Initialize(clayMemory, (Clay_Dimensions) { (float)GetScreenWidth(), (float)GetScreenHeight() }, (Clay_ErrorHandler) { HandleClayErrors, 0 });
     Clay_Raylib_Initialize(1024, 768, "Clay - Raylib Renderer Example", FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
-    profilePicture = LoadTexture("resources/profile-picture.png");
 
     Font fonts[2];
     fonts[FONT_ID_BODY_24] = LoadFontEx(DIRECTORY "resources/Roboto-Regular.ttf", 48, NULL, 0);
